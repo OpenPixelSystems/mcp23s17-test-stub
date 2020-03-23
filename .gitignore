@@ -1,4 +1,6 @@
 .mxproject
 *.ioc
 build
-
+*.swp
+*~
+*.swo
