@@ -29,6 +29,7 @@
 #include "main.h"
 #include "stm32f767xx.h"
 #include "stm32f7xx_hal_spi.h"
+#include "stm32f7xx_hal_spi_ex.h"
 #include "stm32f7xx_it.h"
 
 #include <stdio.h>
@@ -134,4 +135,5 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	printf("This is the SPI Rx interrupt handler\n");
+	HAL_SPIEx_FlushRxFifo(hspi);
 }

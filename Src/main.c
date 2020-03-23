@@ -27,16 +27,30 @@
 #include "main.h"
 #include "stm32f7xx_hal.h"
 #include "stm32f7xx_hal_spi.h"
+
 #include <stdio.h>
+#include "mcp23s17_stub.h"
 
 SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart3;
-static unsigned char spi_rx_buffer[4];
+static unsigned char spi_rx_buffer[3];
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_SPI1_Init(void);
+
+static int CURRENT_MCP_BANK = MCP23S17_BANK_0;
+
+static int process_mcp23s17_packet(unsigned char *buffer)
+{
+	uint8_t addr = (buffer[0] & MCP23S17_ADDRESS_MASK) >> 1;
+	int reg = MCP23S17_convert_reg(CURRENT_MCP_BANK, buffer[1]);
+	printf("Changing register %s of chip %d to %d\n", MCP23S17_reg_to_string(reg),
+			addr, buffer[2]);
+
+	return 0;
+}
 
 int main(void)
 {
@@ -52,12 +66,11 @@ int main(void)
 
 	while (1)
 	{
-		HAL_SPI_Receive_IT(&hspi1, spi_rx_buffer, 4);
+		HAL_SPI_Receive_IT(&hspi1, spi_rx_buffer, 3);
 		while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+
 		printf("SPI Changed to ready!\n");
-		printf("%x-%x-%x-%x\n", spi_rx_buffer[0], spi_rx_buffer[1],
-				spi_rx_buffer[2], spi_rx_buffer[3]);
-		HAL_Delay(500);
+		process_mcp23s17_packet(spi_rx_buffer);
 	}
 }
 
@@ -130,7 +143,7 @@ static void MX_SPI1_Init(void)
 	hspi1.Instance = SPI1;
 	hspi1.Init.Mode = SPI_MODE_SLAVE;
 	hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-	hspi1.Init.DataSize = SPI_DATASIZE_4BIT;
+	hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
 	hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
 	hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
 	hspi1.Init.NSS = SPI_NSS_HARD_INPUT;
