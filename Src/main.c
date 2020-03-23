@@ -29,7 +29,7 @@
 #include "stm32f7xx_hal_spi.h"
 
 #include <stdio.h>
-#include "mcp23s17_stub.h"
+#include "mcp23s17.h"
 
 SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart3;

@@ -1,3 +1,11 @@
+/**
+ * @file mcp23s17_stub.h
+ * @brief  MCP23S17 Header implementation
+ * @author Bram Vlerick <bram.vlerick@openpixelsystems.org>
+ * @version v0.1
+ * @date 2020-03-23
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 
