@@ -126,8 +126,12 @@ void SPI1_IRQHandler(void)
 	HAL_SPI_IRQHandler(&hspi1);
 }
 
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+	printf("This is the SPI Tx/Rx interrupt handler\n");
+}
+
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-	printf("This is the SPI interrupt handler\n");
-	asm("nop");
+	printf("This is the SPI Rx interrupt handler\n");
 }

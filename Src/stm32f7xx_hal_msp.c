@@ -26,6 +26,7 @@
  */
 
 #include "main.h"
+#include "stm32f7xx_hal_cortex.h"
 
 /**
  * Initializes the Global MSP.
@@ -50,11 +51,15 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 		/* Peripheral clock enable */
 		__HAL_RCC_SPI1_CLK_ENABLE();
 
+		__HAL_RCC_GPIOA_CLK_ENABLE();
 		__HAL_RCC_GPIOB_CLK_ENABLE();
-		/**SPI1 GPIO Configuration
+
+		/**
+		  SPI1 GPIO Configuration
 		  PB3     ------> SPI1_SCK
 		  PB4     ------> SPI1_MISO
 		  PB5     ------> SPI1_MOSI
+		  PA4     ------> SPI1_NSS
 		  */
 		GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
 		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -62,6 +67,14 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 		GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
 		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+		/** NSS Pin */
+		GPIO_InitStruct.Pin = GPIO_PIN_4;
+		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+		/** Set NVIC Priority and enable SPI IRQ */
+		HAL_NVIC_SetPriority(SPI1_IRQn, 1, 0);
+		HAL_NVIC_EnableIRQ(SPI1_IRQn);
 	}
 }
 

@@ -25,10 +25,13 @@
  */
 
 #include "main.h"
+#include "stm32f7xx_hal.h"
+#include "stm32f7xx_hal_spi.h"
 #include <stdio.h>
 
 SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart3;
+static unsigned char spi_rx_buffer[4];
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -46,9 +49,15 @@ int main(void)
 	MX_SPI1_Init();
 
 	printf("OH! Hi there!\n");
+
 	while (1)
 	{
-		asm("nop");
+		HAL_SPI_Receive_IT(&hspi1, spi_rx_buffer, 4);
+		while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+		printf("SPI Changed to ready!\n");
+		printf("%x-%x-%x-%x\n", spi_rx_buffer[0], spi_rx_buffer[1],
+				spi_rx_buffer[2], spi_rx_buffer[3]);
+		HAL_Delay(500);
 	}
 }
 
@@ -119,12 +128,12 @@ void SystemClock_Config(void)
 static void MX_SPI1_Init(void)
 {
 	hspi1.Instance = SPI1;
-	hspi1.Init.Mode = SPI_MODE_MASTER;
+	hspi1.Init.Mode = SPI_MODE_SLAVE;
 	hspi1.Init.Direction = SPI_DIRECTION_2LINES;
 	hspi1.Init.DataSize = SPI_DATASIZE_4BIT;
 	hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
 	hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-	hspi1.Init.NSS = SPI_NSS_SOFT;
+	hspi1.Init.NSS = SPI_NSS_HARD_INPUT;
 	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
 	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
 	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
