@@ -95,7 +95,7 @@ static inline char* MCP23S17_reg_to_string(int reg) {
 		case MCP23S17_OLATB:
 			return MCP23S17_REG_TO_STRING(MCP23S17_OLATB);
 		default:
-			return NULL;
+			return "NULL";
 	}
-	return NULL;
+	return "NULL";
 }

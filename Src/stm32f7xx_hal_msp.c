@@ -27,6 +27,7 @@
 
 #include "main.h"
 #include "stm32f7xx_hal_cortex.h"
+#include "stm32f7xx_hal_gpio.h"
 
 /**
  * Initializes the Global MSP.
@@ -72,8 +73,10 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 		GPIO_InitStruct.Pin = GPIO_PIN_4;
 		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+		/* __HAL_SPI_DISABLE_IT(hspi, SPI_IT_TXE); */
+
 		/** Set NVIC Priority and enable SPI IRQ */
-		HAL_NVIC_SetPriority(SPI1_IRQn, 1, 0);
+		HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
 		HAL_NVIC_EnableIRQ(SPI1_IRQn);
 	}
 }

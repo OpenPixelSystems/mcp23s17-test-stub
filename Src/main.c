@@ -29,47 +29,101 @@
 #include "stm32f7xx_hal_spi.h"
 
 #include <stdio.h>
+#include <string.h>
 #include "mcp23s17.h"
 
 SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart3;
-static unsigned char spi_rx_buffer[3];
+
+static uint8_t spi_rx_buffer[3];
+static uint8_t spi_tx_buffer[3] = {0x01,0x02,0x03};
 
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_USART3_UART_Init(void);
 static void MX_SPI1_Init(void);
 
 static int CURRENT_MCP_BANK = MCP23S17_BANK_0;
 
+struct mcp23s17_regstate_t {
+	uint8_t iodira;
+	uint8_t iodirb;
+	uint8_t ipola;
+	uint8_t ipolb;
+	uint8_t gpintena;
+	uint8_t gpintenb;
+	uint8_t defvala;
+	uint8_t defvalb;
+	uint8_t intcona;
+	uint8_t intconb;
+	uint8_t iocon1;
+	uint8_t iocon2;
+	uint8_t gppua;
+	uint8_t gppub;
+	uint8_t intfa;
+	uint8_t intfb;
+	uint8_t intcapa;
+	uint8_t intcapb;
+	uint8_t gpioa;
+	uint8_t gpiob;
+	uint8_t olata;
+	uint8_t olatb;
+};
+
+static struct mcp23s17_regstate_t ioexp1 = {
+	.iodira = 0xff,
+	.iodirb = 0xff,
+};
+
+static struct mcp23s17_regstate_t ioexp2 = {
+	.iodira = 0xff,
+	.iodirb = 0xff,
+};
+
 static int process_mcp23s17_packet(unsigned char *buffer)
 {
-	uint8_t addr = (buffer[0] & MCP23S17_ADDRESS_MASK) >> 1;
+	int addr = buffer[0];
 	int reg = MCP23S17_convert_reg(CURRENT_MCP_BANK, buffer[1]);
-	printf("Changing register %s of chip %d to %d\n", MCP23S17_reg_to_string(reg),
-			addr, buffer[2]);
+
+	struct mcp23s17_regstate_t *curr = NULL;
+	if (addr == 0x40 || addr == 0x041) {
+		curr = &ioexp1;
+	} else if (addr == 0x42 || addr == 0x043) {
+		curr = &ioexp2;
+	} else {
+		printf("Invalid address!\n");
+		return -1;
+	}
+	/* printf("%x - %x - %x\n", spi_rx_buffer[0], spi_rx_buffer[1], spi_rx_buffer[2]); */
+
+	if (addr & 0x01) {
+		printf("Reading register %s of chip 0x%.2x to 0x%.2x\n",
+				MCP23S17_reg_to_string(reg), addr, buffer[2]);
+		memcpy(spi_tx_buffer, spi_rx_buffer, 3);
+	} else {
+		printf("Changing register %s of chip 0x%.2x to 0x%.2x\n",
+				MCP23S17_reg_to_string(reg), addr, buffer[2]);
+		memcpy(spi_tx_buffer, spi_rx_buffer, 3);
+	}
 
 	return 0;
 }
 
 int main(void)
 {
+	SCB_EnableICache();
+	SCB_EnableDCache();
+
 	HAL_Init();
 	SystemClock_Config();
 
-	MX_GPIO_Init();
-
-	MX_USART3_UART_Init();
 	MX_SPI1_Init();
 
 	printf("OH! Hi there!\n");
 
 	while (1)
 	{
-		HAL_SPI_Receive_IT(&hspi1, spi_rx_buffer, 3);
-		while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+		HAL_SPI_TransmitReceive_IT(&hspi1,spi_tx_buffer, spi_rx_buffer, 3);
 
-		printf("SPI Changed to ready!\n");
+		while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
 		process_mcp23s17_packet(spi_rx_buffer);
 	}
 }
@@ -90,7 +144,7 @@ void SystemClock_Config(void)
 	/** Configure the main internal regulator output voltage
 	*/
 	__HAL_RCC_PWR_CLK_ENABLE();
-	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
+	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 	/** Initializes the CPU, AHB and APB busses clocks
 	*/
 	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
@@ -158,80 +212,6 @@ static void MX_SPI1_Init(void)
 	{
 		Error_Handler();
 	}
-}
-
-/**
- * @brief USART3 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_USART3_UART_Init(void)
-{
-	huart3.Instance = USART3;
-	huart3.Init.BaudRate = 115200;
-	huart3.Init.WordLength = UART_WORDLENGTH_8B;
-	huart3.Init.StopBits = UART_STOPBITS_1;
-	huart3.Init.Parity = UART_PARITY_NONE;
-	huart3.Init.Mode = UART_MODE_TX_RX;
-	huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	huart3.Init.OverSampling = UART_OVERSAMPLING_16;
-	huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-	huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-	if (HAL_UART_Init(&huart3) != HAL_OK)
-	{
-		Error_Handler();
-	}
-}
-
-/**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
-static void MX_GPIO_Init(void)
-{
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-	/* GPIO Ports Clock Enable */
-	__HAL_RCC_GPIOC_CLK_ENABLE();
-	__HAL_RCC_GPIOH_CLK_ENABLE();
-	__HAL_RCC_GPIOA_CLK_ENABLE();
-	__HAL_RCC_GPIOB_CLK_ENABLE();
-	__HAL_RCC_GPIOD_CLK_ENABLE();
-	__HAL_RCC_GPIOG_CLK_ENABLE();
-
-	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
-
-	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(USB_PowerSwitchOn_GPIO_Port, USB_PowerSwitchOn_Pin, GPIO_PIN_RESET);
-
-	/*Configure GPIO pin : USER_Btn_Pin */
-	GPIO_InitStruct.Pin = USER_Btn_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(USER_Btn_GPIO_Port, &GPIO_InitStruct);
-
-	/*Configure GPIO pins : LD1_Pin LD3_Pin LD2_Pin */
-	GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin|LD2_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-	/*Configure GPIO pin : USB_PowerSwitchOn_Pin */
-	GPIO_InitStruct.Pin = USB_PowerSwitchOn_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(USB_PowerSwitchOn_GPIO_Port, &GPIO_InitStruct);
-
-	/*Configure GPIO pin : USB_OverCurrent_Pin */
-	GPIO_InitStruct.Pin = USB_OverCurrent_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(USB_OverCurrent_GPIO_Port, &GPIO_InitStruct);
-
 }
 
 /**

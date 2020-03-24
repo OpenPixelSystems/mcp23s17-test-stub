@@ -130,10 +130,10 @@ void SPI1_IRQHandler(void)
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	printf("This is the SPI Tx/Rx interrupt handler\n");
+	HAL_SPIEx_FlushRxFifo(&hspi1);
 }
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	printf("This is the SPI Rx interrupt handler\n");
-	HAL_SPIEx_FlushRxFifo(hspi);
 }
