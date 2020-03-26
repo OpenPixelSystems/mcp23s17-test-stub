@@ -29,7 +29,6 @@
 #include "stm32f7xx_hal_spi.h"
 
 #include <stdio.h>
-#include <string.h>
 #include "mcp23s17.h"
 
 SPI_HandleTypeDef hspi1;
@@ -40,72 +39,6 @@ static uint8_t spi_tx_buffer[3] = {0x01,0x02,0x03};
 
 void SystemClock_Config(void);
 static void MX_SPI1_Init(void);
-
-static int CURRENT_MCP_BANK = MCP23S17_BANK_0;
-
-struct mcp23s17_regstate_t {
-	uint8_t iodira;
-	uint8_t iodirb;
-	uint8_t ipola;
-	uint8_t ipolb;
-	uint8_t gpintena;
-	uint8_t gpintenb;
-	uint8_t defvala;
-	uint8_t defvalb;
-	uint8_t intcona;
-	uint8_t intconb;
-	uint8_t iocon1;
-	uint8_t iocon2;
-	uint8_t gppua;
-	uint8_t gppub;
-	uint8_t intfa;
-	uint8_t intfb;
-	uint8_t intcapa;
-	uint8_t intcapb;
-	uint8_t gpioa;
-	uint8_t gpiob;
-	uint8_t olata;
-	uint8_t olatb;
-};
-
-static struct mcp23s17_regstate_t ioexp1 = {
-	.iodira = 0xff,
-	.iodirb = 0xff,
-};
-
-static struct mcp23s17_regstate_t ioexp2 = {
-	.iodira = 0xff,
-	.iodirb = 0xff,
-};
-
-static int process_mcp23s17_packet(unsigned char *buffer)
-{
-	int addr = buffer[0];
-	int reg = MCP23S17_convert_reg(CURRENT_MCP_BANK, buffer[1]);
-
-	struct mcp23s17_regstate_t *curr = NULL;
-	if (addr == 0x40 || addr == 0x041) {
-		curr = &ioexp1;
-	} else if (addr == 0x42 || addr == 0x043) {
-		curr = &ioexp2;
-	} else {
-		printf("Invalid address!\n");
-		return -1;
-	}
-	/* printf("%x - %x - %x\n", spi_rx_buffer[0], spi_rx_buffer[1], spi_rx_buffer[2]); */
-
-	if (addr & 0x01) {
-		printf("Reading register %s of chip 0x%.2x to 0x%.2x\n",
-				MCP23S17_reg_to_string(reg), addr, buffer[2]);
-		memcpy(spi_tx_buffer, spi_rx_buffer, 3);
-	} else {
-		printf("Changing register %s of chip 0x%.2x to 0x%.2x\n",
-				MCP23S17_reg_to_string(reg), addr, buffer[2]);
-		memcpy(spi_tx_buffer, spi_rx_buffer, 3);
-	}
-
-	return 0;
-}
 
 int main(void)
 {
@@ -124,7 +57,7 @@ int main(void)
 		HAL_SPI_TransmitReceive_IT(&hspi1,spi_tx_buffer, spi_rx_buffer, 3);
 
 		while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
-		process_mcp23s17_packet(spi_rx_buffer);
+		MCP23S17_process_packet(spi_tx_buffer, spi_rx_buffer);
 	}
 }
 

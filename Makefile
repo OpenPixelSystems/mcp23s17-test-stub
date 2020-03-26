@@ -73,6 +73,7 @@ BUILD_DIR = build
 # C sources
 
 C_SOURCES =  \
+Src/mcp23s17.c \
 Src/main.c \
 Src/stm32f7xx_hal_msp.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cortex.c \

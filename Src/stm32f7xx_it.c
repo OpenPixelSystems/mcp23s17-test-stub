@@ -137,3 +137,15 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	printf("This is the SPI Rx interrupt handler\n");
 }
+
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+	printf("This is the SPI error interrupt handler\n");
+}
+
+void HAL_SPI_AbortCpltCallback(SPI_HandleTypeDef *hspi)
+{
+	printf("This is the SPI Abort interrupt handler\n");
+}
+
+
