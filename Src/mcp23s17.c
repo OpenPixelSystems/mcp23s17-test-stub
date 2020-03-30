@@ -2,6 +2,8 @@
 
 static int CURRENT_MCP_BANK = MCP23S17_BANK_0;
 
+/* TODO Create a static default state and allow the system to reset to default! */
+
 static struct mcp23s17_regstate_t ioexp1 = {
 	.iodira = 0xff,
 	.iodirb = 0xff,

@@ -1,6 +1,6 @@
-file build/ops-spi-reader.elf
+file build-cortex/spi-stub.elf
 tar ext:3333
 monitor halt
-load build/ops-spi-reader.elf
+load build-cortex/spi-stub.elf
 monitor reset halt
 mon arm semihosting enable

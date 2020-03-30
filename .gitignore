@@ -1,6 +1,6 @@
 .mxproject
 *.ioc
-build
+build-cortex
 *.swp
 *~
 *.swo
